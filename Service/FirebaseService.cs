@@ -163,4 +163,8 @@ public class FirebaseService
          */
         return _firestoreDb.Collection(collectionName);
     }
+    public FirestoreDb GetDb()
+    {
+        return _firestoreDb;
+    }
 }
