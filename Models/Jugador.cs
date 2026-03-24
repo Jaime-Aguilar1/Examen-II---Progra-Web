@@ -45,10 +45,10 @@ public class Jugador
     [FirestoreProperty]
     public Timestamp RegistrationDate { get; set; }
     
-    [FirestoreProperty]
-    public bool IsOnline { get; set; } = true;
+    [FirestoreProperty("IsOnline")]
+    public bool IsOnline { get; set; } 
 
-    [FirestoreProperty]
+    [FirestoreProperty("LastConect")]
     public Timestamp LastConect { get; set; }
     
 }
