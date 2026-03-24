@@ -1,6 +1,10 @@
 using Google.Cloud.Firestore;
 using ExamenII_Web.api.DTOs;
 using ExamenII_Web.api.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ExamenII_Web.api.Service
 {
@@ -8,9 +12,9 @@ namespace ExamenII_Web.api.Service
     {
         private readonly FirestoreDb _db;
 
-        public ReporteService(FirebaseService firebase)
+        public ReporteService(FirestoreDb firestoreDb)
         {
-            _db = firebase.GetDb();
+            _db = firestoreDb;
         }
 
         // Obtener ranking global de un juego
@@ -43,10 +47,10 @@ namespace ExamenII_Web.api.Service
                 return new ClasificacionDto
                 {
                     Posicion = c.Posicion,
-                    NombreJugador = jugador?.Nombre ?? "Desconocido",
-                    Puntos = c.PuntosJuego,
+                    NombreJugador = jugador?.UserName ?? "Desconocido",
+                    Puntos = (int)c.PuntosJuego,
                     Nivel = c.NivelJuego,
-                    RatioVictoria = c.TotalPartidas > 0 ? (double)c.RatioVictoria / 100 : 0,
+                    RatioVictoria = c.TotalPartidas > 0 ? c.RatioVictoria / 100.0 : 0,
                     TotalPartidas = c.TotalPartidas,
                     RachaActual = c.Racha
                 };
@@ -62,12 +66,13 @@ namespace ExamenII_Web.api.Service
 
             var snapshot = await query.GetSnapshotAsync();
             var clasificacion = snapshot.Documents.Select(doc => doc.ConvertTo<Clasificacion>()).FirstOrDefault();
+            
             if (clasificacion == null) return null;
 
             return new ClasificacionJugadorDto
             {
                 Posicion = clasificacion.Posicion,
-                Puntos = clasificacion.PuntosJuego,
+                Puntos = (int)clasificacion.PuntosJuego,
                 Nivel = clasificacion.NivelJuego,
                 Medallas = new List<string>
                 {
@@ -84,7 +89,7 @@ namespace ExamenII_Web.api.Service
         {
             var fechaLimite = DateTime.UtcNow.AddDays(-30);
             var snapshot = await _db.Collection("torneos")
-                .WhereGreaterThan("fechaCreacion", fechaLimite)
+                .WhereGreaterThanOrEqualTo("fechaCreacion", fechaLimite.ToUniversalTime())
                 .GetSnapshotAsync();
 
             var torneos = snapshot.Documents.Select(doc => doc.ConvertTo<Torneo>())
@@ -92,15 +97,15 @@ namespace ExamenII_Web.api.Service
                 .Take(10)
                 .ToList();
 
-            var juegoIds = torneos.Select(t => t.JuegoId).Distinct().ToList();
+            var juegoIds = torneos.Select(t => t.Juego).Distinct().ToList();
             var juegos = await ObtenerJuegosPorIds(juegoIds);
 
             return torneos.Select(t =>
             {
-                var juego = juegos.FirstOrDefault(j => j.Id == t.JuegoId);
+                var juego = juegos.FirstOrDefault(j => j.Id == t.Juego);
                 return new TorneoPopularDto
                 {
-                    Nombre = t.Nombre,
+                    Nombre = t.Nombre, // <-- Coincide con TorneoPopularDto
                     Juego = juego?.Titulo ?? "Desconocido",
                     CantidadInscripciones = t.ParticipantesActuales,
                     PremioTotal = t.PremioTotal,
@@ -115,7 +120,7 @@ namespace ExamenII_Web.api.Service
             var snapshot = await _db.Collection("jugadores").GetSnapshotAsync();
             var jugadores = snapshot.Documents
                 .Select(doc => doc.ConvertTo<Jugador>())
-                .OrderByDescending(j => j.PuntosGlobales)
+                .OrderByDescending(j => j.GlobalPoints)
                 .Take(20)
                 .ToList();
 
@@ -133,9 +138,9 @@ namespace ExamenII_Web.api.Service
 
                 jugadoresDestacados.Add(new JugadorDestacadoDto
                 {
-                    Nombre = j.Nombre,
-                    PuntosGlobales = j.PuntosGlobales,
-                    TorneosGanados = j.TorneosGanados,
+                    Nombre = j.UserName, // <-- De Jugador.UserName a JugadorDestacadoDto.Nombre
+                    PuntosGlobales = j.GlobalPoints,
+                    TorneosGanados = j.TournamentWon,
                     CantidadJuegos = cantidadJuegos
                 });
             }
@@ -146,8 +151,15 @@ namespace ExamenII_Web.api.Service
         // Desempeño del jugador en un juego específico
         public async Task<DesempenoDto> ObtenerMiDesempeno(string juegoId, string jugadorId)
         {
-            var clasificacion = await ObtenerClasificacionJugador(juegoId, jugadorId);
-            if (clasificacion == null) return null;
+            // Consultamos la clasificación directamente para tener acceso a todos los datos crudos
+            var query = _db.Collection("clasificaciones")
+                .WhereEqualTo("juegoId", juegoId)
+                .WhereEqualTo("jugadorId", jugadorId);
+
+            var snapshot = await query.GetSnapshotAsync();
+            var c = snapshot.Documents.Select(doc => doc.ConvertTo<Clasificacion>()).FirstOrDefault();
+            
+            if (c == null) return null;
 
             var participacionesSnapshot = await _db.Collection("participaciones")
                 .WhereEqualTo("jugadorId", jugadorId)
@@ -163,17 +175,23 @@ namespace ExamenII_Web.api.Service
                 .Take(3)
                 .ToList();
 
-            int puntosParaSiguiente = clasificacion.Nivel * 1000;
-            double progreso = clasificacion.Puntos > 0 ? (double)clasificacion.Puntos / puntosParaSiguiente * 100 : 0;
+            int puntosParaSiguiente = c.NivelJuego * 1000;
+            // Lo dejamos como double porque así lo pide DesempenoDto
+            double progreso = c.PuntosJuego > 0 ? (double)c.PuntosJuego / puntosParaSiguiente * 100 : 0;
 
             return new DesempenoDto
             {
-                NivelActual = clasificacion.Nivel,
-                PosicionRanking = clasificacion.Posicion,
-                ProgresoSiguienteNivel = progreso,
-                RatioVictoria = clasificacion.RatioVictoria,
-                RachaActual = clasificacion.RachaActual,
-                MedallasObtenidas = clasificacion.Medallas,
+                NivelActual = c.NivelJuego,
+                PosicionRanking = c.Posicion,
+                ProgresoSiguienteNivel = progreso, // <-- En formato double, sin el .ToString("%")
+                RatioVictoria = c.RatioVictoria,
+                RachaActual = c.Racha,
+                MedallasObtenidas = new List<string>
+                {
+                    $"Oro:{c.MedallasOro}",
+                    $"Plata:{c.MedallaPlata}",
+                    $"Bronce:{c.MedallaBronce}"
+                },
                 MejoresTorneos = mejoresTorneos
             };
         }
@@ -202,7 +220,7 @@ namespace ExamenII_Web.api.Service
             foreach (var torneoDoc in torneosSnapshot.Documents)
             {
                 var torneo = torneoDoc.ConvertTo<Torneo>();
-                var juego = await ObtenerJuegoPorId(torneo.JuegoId);
+                var juego = await ObtenerJuegoPorId(torneo.Juego);
                 if (juego != null)
                 {
                     if (generos.ContainsKey(juego.Genero))

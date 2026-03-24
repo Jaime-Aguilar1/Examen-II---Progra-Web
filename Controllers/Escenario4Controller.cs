@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ExamenII_Web.api.DTOs;
-using ExamenII_Web.api.Services.Interfaces;
+using ExamenII_Web.api.Service;
 
 namespace ExamenII_Web.api.Controllers
 {
