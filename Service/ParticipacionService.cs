@@ -24,7 +24,7 @@ public class ParticipacionService : IParticipacionService
 
             var torneo = torneoDoc.ToDictionary();
 
-            if (torneo["estado"].ToString() != "proximo")
+            if (torneo["estado"].ToString() != "próximo")
                 throw new Exception("El torneo no esta disponible");
 
             if (Timestamp.GetCurrentTimestamp() >

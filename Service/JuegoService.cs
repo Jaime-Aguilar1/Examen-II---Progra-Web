@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ExamenII_Web.api.Service;
 
-namespace ExamenII_Web.api.Services
+namespace ExamenII_Web.api.Service
 {
     public class JuegoService : IJuegoService
-    {
+
+{
         private readonly FirestoreDb _firestoreDb;
         private const string Coleccion = "juegos";
 

@@ -5,6 +5,7 @@ using ExamenII_Web.api.Models;
 using ExamenII_Web.api.Services;
 using System;
 using System.Threading.Tasks;
+using ExamenII_Web.api.Service;
 
 namespace ExamenII_Web.api.Controllers
 {
