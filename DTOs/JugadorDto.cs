@@ -1,6 +1,8 @@
 ﻿
 
 
+using Google.Cloud.Firestore;
+
 namespace ExamenII_Web.api.DTOs
 {
     public class JugadorDto
@@ -12,6 +14,7 @@ namespace ExamenII_Web.api.DTOs
         public int GlobalPoints { get; set; }
         public int TournamentWon { get; set; } 
         public string Role { get; set; } = "jugador"; 
+       
         public bool IsOnline { get; set; }
         public string Email { get; set; }
     }

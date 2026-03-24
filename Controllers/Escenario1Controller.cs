@@ -90,7 +90,7 @@ public class Escenario1Controller: ControllerBase
                 var response = new AuthResponseDto
                 {
                     Success = true,
-                    Message = "Bienvenido al sistema del Hotel",
+                    Message = "Bienvenido la Plataforma de Juego y Torneos",
                     Token = token,
                     Jugador = userDto
                 };
@@ -138,5 +138,29 @@ public class Escenario1Controller: ControllerBase
                _logger.LogError($"Error al buscar usuario en biblioteca: {ex.Message}");
                return StatusCode(500, new { message = "Error interno al obtener los datos del perfil" });
            }
+       }
+       
+       [HttpPut("jugadores/{id}/perfil")]
+       public async Task<IActionResult> UpdatePerfil(string id, [FromBody] ActualizarPerfilDto dto)
+       {
+           
+           var userIdFromToken = User.FindFirst("jugadorId")?.Value; 
+           var userRole = User.FindFirst("rol")?.Value;
+
+           
+           if (userIdFromToken != id && userRole != "admin")
+           {
+               return Forbid();
+           }
+
+           
+           var resultado = await _authService.ActualizarPerfil(id, dto);
+
+           if (!resultado)
+           {
+               return NotFound(new { message = "Jugador no encontrado" }); 
+           }
+
+           return Ok(new { message = "Perfil actualizado exitosamente" });
        }
     }

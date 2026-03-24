@@ -39,4 +39,6 @@ public interface IAuthService
      * Genera la cadena del token JWT basada en los datos del usuario y su rol (huésped/gerente)
      */
     string GenerateJwtToken(Jugador user);
+    
+    Task<bool> ActualizarPerfil(string id, ActualizarPerfilDto dto);
 }

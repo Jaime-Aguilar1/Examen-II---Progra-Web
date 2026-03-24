@@ -21,7 +21,7 @@ public class AuthService : IAuthService
     {
         _firebaseService = firebaseService;
         _configuration = configuration;
-        _usuariosCollection = _firebaseService.GetCollection("Jugadores"); // Asegúrate de que el nombre coincida con tu BD
+        _usuariosCollection = _firebaseService.GetCollection("Jugadores"); 
     }
     
     
@@ -44,6 +44,8 @@ public class AuthService : IAuthService
             {
                 throw new InvalidOperationException("El email ya está registrado");
             }
+            var nickQuery = await _usuariosCollection.WhereEqualTo("NickName", registerDto.NickName).GetSnapshotAsync();
+            if (nickQuery.Count > 0) throw new InvalidOperationException("El NickName de usuario ya está en uso");
 
             // 2. Crear el objeto Usuario 
             var nuevoUsuario = new Jugador
@@ -53,11 +55,11 @@ public class AuthService : IAuthService
                 UserLastName =  registerDto.UserLastName,
                 BirthDate =  Timestamp.FromDateTime(registerDto.BirthDate.ToUniversalTime()),
                 Email = registerDto.Email,
-                Pass = HashPassword(registerDto.Pass), // Encriptamos la contraseña
+                Pass = HashPassword(registerDto.Pass), 
                 Contry = registerDto.Contry,
                 NickName = registerDto.NickName,
                 Role = "jugador", 
-                IsOnline =  true,
+                IsOnline =  false,
                 IsActive =  true,
                 GlobalPoints = 0,
                 TournamentWon = 0,
@@ -93,15 +95,26 @@ public class AuthService : IAuthService
 
             var userDoc = query.Documents[0];
             var usuario = userDoc.ConvertTo<Jugador>();
+            if (!usuario.IsActive) 
+            {
+                throw new InvalidOperationException("Esta cuenta ha sido desactivada.");
+            }
 
             // 2. Validar contraseña encriptada
             if (usuario.Pass!= HashPassword(loginDto.Pass))
             {
                 throw new InvalidOperationException("Credenciales incorrectas");
             }
+            var actualizaciones = new Dictionary<string, object>
+            {
+                { "IsOnline", true },
+                { "LastConect", Timestamp.FromDateTime(DateTime.UtcNow) }
+            };
+            await userDoc.Reference.UpdateAsync(actualizaciones); 
 
             // 3. Generar el token
             var token = GenerateJwtToken(usuario);
+           
 
             // 4. Mapear a UserDto
             var userDto = new JugadorDto()
@@ -113,7 +126,6 @@ public class AuthService : IAuthService
                 Email = usuario.Email,
                 GlobalPoints = usuario.GlobalPoints,
                 TournamentWon = usuario.TournamentWon,
-                IsOnline = true,
                 Role = usuario.Role,
                 // TRANSFORMACIÓN 2: Calcular edad en tiempo real desde la BirthDate
                 Age = CalculateAge(usuario.BirthDate.ToDateTime())
@@ -245,6 +257,32 @@ public class AuthService : IAuthService
             var bytes = Encoding.UTF8.GetBytes(password);
             var hash = sha256.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
+        }
+    }
+    public async Task<bool> ActualizarPerfil(string id, ActualizarPerfilDto dto)
+    {
+        try
+        {
+            var docRef = _usuariosCollection.Document(id); 
+            var snapshot = await docRef.GetSnapshotAsync();
+
+            if (!snapshot.Exists) return false;
+
+            
+            var actualizaciones = new Dictionary<string, object>
+            {
+                { "UserName", dto.UserName },
+                { "UserLastName", dto.UserLastName },
+                { "BirthDate", dto.BirthDate },
+                { "Contry", dto.Contry }
+            };
+
+            await docRef.UpdateAsync(actualizaciones); 
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
     
