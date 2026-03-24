@@ -2,7 +2,7 @@
 
 namespace ExamenII_Web.api.Service;
 
-public class IParticipacionService
+public interface IParticipacionService
 {
     Task InscribirseTorneo(string torneoId, string jugadorId, bool pagado);
 

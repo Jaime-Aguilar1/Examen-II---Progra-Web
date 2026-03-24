@@ -91,7 +91,7 @@ public class ParticipacionService : IParticipacionService
         {
             var participaciones = await _db.Collection("participaciones")
                 .WhereEqualTo("torneoId", torneoId)
-                .OrderBy("puntosObtenidos", Direction.Descending)
+                .OrderByDescending("puntosObtenidos")
                 .Limit(limite)
                 .Offset((pagina - 1) * limite)
                 .GetSnapshotAsync();
@@ -210,4 +210,3 @@ public class ParticipacionService : IParticipacionService
             await torneoRef.UpdateAsync("participantesActuales", actuales - 1);
         }
     }
-}
