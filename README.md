@@ -24,9 +24,129 @@ Se expusieron los endpoints requeridos con manejo apropiado de códigos HTTP:
   POST /api/Escenario1/login: Valida credenciales y devuelve el token JWT.
   GET /api/Escenario1/jugadores/{id}: Retorna el perfil público accesible para todos los usuarios autenticados.
   PUT /api/Escenario1/jugadores/{id}/perfil: Implementa seguridad a nivel de recurso; solo el propietario o un administrador puede realizar cambios.
+  
 
 
+Escenario 2: Gestión de Videojuegos
+Responsable: Integrante #2
+1. Modelo de Datos (Juego.cs)
+Se implementó la clase base vinculada a Firestore para la colección juegos, cumpliendo con la estructura solicitada en el examen:
+•	Mapeo de Atributos:
+Se utilizaron anotaciones [FirestoreProperty] para asegurar la correcta sincronización con los campos en Firestore (titulo, desarrollador, genero, plataformas, etc.). 
+•	Identificador del Documento:
+Uso de [FirestoreDocumentId] para manejar el Id generado automáticamente por Firestore. 
+•	Valores por Defecto:
+Se inicializan automáticamente: 
+o	jugadoresActivos = 0 
+o	torneoActivos = 0 
+o	estado = "disponible" 
+o	puntuacionPromedio = 0.0 
+o	fechaAgreg = DateTime.UtcNow 
+•	Tipos de Datos:
+Uso de List<string> para plataformas, DateTime para fechas y double/int para métricas numéricas. 
+2. Capa de Transferencia (JuegoDto.cs)
+Se creó el DTO para controlar los datos que entran desde el cliente hacia la API:
+•	Validaciones: 
+o	[Required] en todos los campos obligatorios 
+o	[MinLength(20)] en la descripción 
+•	Propósito: 
+o	Evitar exponer directamente el modelo de base de datos 
+o	Validar datos antes de procesarlos en el backend 
+•	Campos Controlados:
+Solo se reciben datos necesarios para la creación/actualización: 
+o	Titulo 
+o	Desarrollador 
+o	Genero 
+o	Plataformas 
+o	FechaLanzamiento 
+o	Descripcion 
+3. Lógica de Negocio (IJuegoService.cs y JuegoService.cs)
+Se implementó la lógica principal del sistema cumpliendo todas las reglas del escenario:
+Agregar Juego
+•	Validación de título único en Firestore 
+•	Validación de plataformas permitidas: PC, PS5, Xbox, Switch 
+•	Validación de descripción mínima de 20 caracteres 
+•	Inicialización de valores por defecto 
+Listar Juegos
+•	Retorna únicamente juegos con estado "disponible" 
+•	Permite filtros por: 
+o	género 
+o	plataforma 
+o	desarrollador 
+Actualizar Juego
+•	Solo permite actualizar: 
+o	descripción 
+o	puntuaciónPromedio 
+o	estado 
+•	Validaciones: 
+o	descripción ≥ 20 caracteres 
+o	puntuación entre 0 y 5 
+o	estado válido: 
+	disponible 
+	mantenimiento 
+	descontinuado 
+Eliminar Juego
+•	Validaciones de integridad: 
+o	No permite eliminar si tiene torneos activos 
+o	No permite eliminar si tiene jugadores activos 
+Obtener Estadísticas
+•	Retorna: 
+o	jugadoresActivos 
+o	torneoActivos 
+o	puntuacionPromedio 
 
+Obtener Todos los Juegos
+•	Método adicional para listar todos los juegos sin filtro de estado 
+4. Controlador (JuegosController.cs)
+Se expusieron los endpoints cumpliendo con seguridad y manejo de errores:
+
+POST /api/juegos
+•	Crea un nuevo juego 
+•	Solo accesible para rol admin 
+•	Valida: 
+o	título único 
+o	plataformas válidas 
+o	descripción mínima 
+GET /api/juegos
+•	Lista juegos disponibles 
+•	Acceso: usuarios autenticados 
+•	Permite filtros: 
+o	género 
+o	plataforma 
+o	desarrollador 
+GET /api/juegos/todos
+•	Retorna todos los juegos sin filtro 
+•	Acceso: usuarios autenticados 
+
+PUT /api/juegos/{id}
+•	Actualiza un juego 
+•	Solo admin 
+•	Valida estado, puntuación y descripción 
+
+DELETE /api/juegos/{id}
+•	Elimina un juego 
+•	Solo admin 
+•	Bloquea eliminación si: 
+o	tiene jugadores activos 
+o	tiene torneos activos 
+
+GET /api/juegos/{id}/estadisticas
+•	Retorna estadísticas del juego 
+•	Acceso: usuarios autenticados 
+
+5. Manejo de Errores y Respuestas HTTP
+Se implementó manejo adecuado de errores:
+•	200 OK: operaciones exitosas 
+•	201 Created: creación de juego 
+•	400 BadRequest: errores de validación 
+•	404 NotFound: recurso no encontrado 
+•	409 Conflict: duplicados o conflictos 
+•	500 InternalServerError: errores internos 
+
+6. Seguridad
+•	Uso de [Authorize] para endpoints protegidos 
+•	Uso de [Authorize(Roles = "admin")] para operaciones críticas 
+•	Integración con JWT (Escenario 1)
 
 
 
