@@ -1,6 +1,7 @@
 ﻿using ExamenII_Web.api.DTOs;
 using ExamenII_Web.api.Service;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ExamenII_Web.api.Controllers;
 /// AuthController maneja la autenticación del sistema del Hotel
