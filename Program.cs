@@ -35,7 +35,7 @@ builder.Services.AddSingleton<FirebaseService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 //builder.Services.AddScoped<IRoomService, RoomService>();
 //builder.Services.AddScoped<IReservationService, ReservationService>();
-
+//builder.Services.AddScoped<ITorneoService, TorneoService>();
 // ============================================
 // CONFIGURAR CORS (Conexión con el Frontend)
 // ============================================
