@@ -128,3 +128,34 @@ Para ejecutar pruebas mediante la interfaz de Swagger, siga los pasos a continua
 3.En la interfaz de Swagger, seleccionar la opción "Authorize".
 4.Ingresar la credencial utilizando el esquema Bearer (formato: Bearer [Token_JWT]).
 5.Proceder con la ejecución de los endpoints documentados en la sección 4.
+
+
+
+Escenario 4 - Participaciones en Torneos
+1. Descripción General El presente módulo permite gestionar las participaciones de los jugadores en los torneos, incluyendo la inscripción, actualización de resultados, listado de participantes y abandono de torneos. Cumple con reglas de negocio estrictas y control de acceso basado en roles.
+2. Tecnologías y Arquitectura - Framework: ASP.NET Core 8.0 - Base de Datos: Google Cloud Firestore - Autenticación: JSON Web Tokens (JWT) - Patrón de Diseño: Arquitectura en N-Capas (Controladores, Servicios, Interfaces, DTOs, Modelos)
+3. Estructura de Datos (Firestore) Colección: participaciones
+Campo	Tipo / Descripción
+torneoId	string - ID del torneo
+jugadorId	string - ID del jugador
+estado	string - “inscrito”, “eliminado”, “abandonado”
+victorias	number
+derrotas	number
+puntosObtenidos	number
+partidasJugadas	number
+posicionActual	number
+fechaInscripcion	timestamp
+fechaEliminacion	timestamp
+4. DTOs - InscripcionDTO: contiene el campo pagado (bool) para confirmar pago. - ResultadoPartidaDTO: contiene victoria (bool) y puntosPartida (int). - ParticipanteDTO: muestra nombre, nombreUsuario, nivel, victorias, derrotas, posicion. - MisTorneosDTO: muestra torneoId, estado, posicion, puntos, victorias, derrotas, fechaInscripcion.
+5. Interfaces y Servicios - IParticipacionService: define los métodos principales: - InscribirseTorneo (inscripción de jugador) - ObtenerParticipantes (listado de participantes con paginación) - ActualizarResultado (actualizar resultado de partida) - ObtenerMisTorneos (torneos del jugador) - AbandonarTorneo (permite abandonar torneo en estado “inscrito”)
+ParticipacionService: implementación de la interfaz, interactúa con Firestore y aplica las reglas de negocio.
+6. Especificación de Endpoints Todas las rutas base: /api
+Método	Ruta	Descripción	Acceso
+POST	/torneos/{id}/inscribirse	Inscribir jugador en torneo, validando estado, nivel y pago	Autenticado
+GET	/torneos/{id}/participantes	Listar participantes con nombre, nivel, victorias, derrotas y posición	Autenticado
+PUT	/torneos/{id}/participantes/{idParticipacion}/actualizar-resultado	Registrar resultado de una partida	Organizador/Admin
+GET	/jugador/mis-torneos	Listar torneos en los que participa el jugador	Autenticado
+DELETE	/torneos/{id}/participantes/{idParticipacion}/abandonar	Abandonar torneo en estado “inscrito”	Autenticado
+7. Reglas de Negocio y Validaciones - Inscripción solo en torneos en estado “próximo” y con cupos disponibles. - El jugador debe estar activo, cumplir el rango de nivel y confirmar pago si aplica. - No se permite inscripción múltiple para el mismo torneo. - Actualización de resultados solo por organizador o admin. - En torneos de eliminación directa, perder una partida cambia estado a “eliminado”. - Solo se puede abandonar torneo si está en estado “inscrito” y el torneo no ha iniciado.
+8. Ejecución de Pruebas (Swagger) 1. Autenticarse y obtener token JWT. 2. Pegar token en la opción “Authorize” de Swagger con esquema Bearer. 3. Ejecutar endpoints según documentación. 4. Verificar respuestas, incluyendo errores HTTP 400, 403, 404 y 500 según validaciones.
+Fin del Documento
