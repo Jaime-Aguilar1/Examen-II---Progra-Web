@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ExamenII_Web.api.Services
 {
- public class JuegoService : IJuegoService
+    public class JuegoService : IJuegoService
     {
         private readonly FirestoreDb _firestoreDb;
         private const string Coleccion = "juegos";
@@ -18,15 +18,14 @@ namespace ExamenII_Web.api.Services
         }
 
         // ================================
-        // POST: Agregar juego
+        // Agregar juego
         // ================================
         public async Task<Juego> AgregarJuego(Juego juego)
         {
             var coleccion = _firestoreDb.Collection(Coleccion);
 
-         // título
             juego.Titulo = juego.Titulo.Trim().ToLower();
-            
+
             var snapshot = await coleccion
                 .WhereEqualTo("Titulo", juego.Titulo)
                 .GetSnapshotAsync();
@@ -34,35 +33,28 @@ namespace ExamenII_Web.api.Services
             if (snapshot.Count > 0)
                 throw new InvalidOperationException("Ya existe un juego con ese título");
 
-            //  plataformas
             var plataformasValidas = new List<string> { "PC", "PS5", "Xbox", "Switch" };
-
-            if (juego.Plataformas == null || juego.Plataformas.Count == 0 ||
-                juego.Plataformas.Any(p => !plataformasValidas.Contains(p)))
-            {
+            if (juego.Plataformas == null || juego.Plataformas.Count == 0 || juego.Plataformas.Any(p => !plataformasValidas.Contains(p)))
                 throw new ArgumentException("Plataformas inválidas");
-            }
 
-            //  descripción
             if (string.IsNullOrWhiteSpace(juego.Descripcion) || juego.Descripcion.Length < 20)
                 throw new ArgumentException("La descripción debe tener al menos 20 caracteres");
 
-            //  valores
             juego.Estado = "disponible";
             juego.PuntuacionPromedio = 0.0;
             juego.JugadoresActivos = 0;
             juego.TorneoActivos = 0;
             juego.FechaAgreg = DateTime.UtcNow;
-            
+
             var docRef = await coleccion.AddAsync(juego);
             juego.Id = docRef.Id;
 
             return juego;
         }
 
-
-        // GET: Listar juegos
-  
+        // ================================
+        // Listar juegos con filtros
+        // ================================
         public async Task<List<Juego>> ListarJuegos(string genero = null, string plataforma = null, string desarrollador = null)
         {
             var coleccion = _firestoreDb.Collection(Coleccion);
@@ -90,8 +82,27 @@ namespace ExamenII_Web.api.Services
             return juegos;
         }
 
+        // ================================
+        // Obtener todos los juegos (nuevo)
+        // ================================
+        public async Task<List<Juego>> ObtenerTodosJuegos()
+        {
+            var coleccion = _firestoreDb.Collection(Coleccion);
+            var snapshot = await coleccion.GetSnapshotAsync();
 
-        // PUT: Actualización parcial
+            var juegos = snapshot.Documents.Select(doc =>
+            {
+                var juego = doc.ConvertTo<Juego>();
+                juego.Id = doc.Id;
+                return juego;
+            }).ToList();
+
+            return juegos;
+        }
+
+        // ================================
+        // Actualizar juego
+        // ================================
         public async Task<Juego> ActualizarJuego(string id, Juego juegoActualizado)
         {
             var docRef = _firestoreDb.Collection(Coleccion).Document(id);
@@ -103,30 +114,24 @@ namespace ExamenII_Web.api.Services
             var estadosValidos = new List<string> { "disponible", "mantenimiento", "descontinuado" };
             var updates = new Dictionary<string, object>();
 
-            // Descripción
             if (!string.IsNullOrWhiteSpace(juegoActualizado.Descripcion))
             {
                 if (juegoActualizado.Descripcion.Length < 20)
                     throw new ArgumentException("Descripción muy corta");
-
                 updates["Descripcion"] = juegoActualizado.Descripcion;
             }
 
-            //  Puntuación
             if (juegoActualizado.PuntuacionPromedio > 0)
             {
                 if (juegoActualizado.PuntuacionPromedio > 5)
                     throw new ArgumentException("Puntuación inválida (0-5)");
-
                 updates["PuntuacionPromedio"] = juegoActualizado.PuntuacionPromedio;
             }
 
-            // Estado
             if (!string.IsNullOrEmpty(juegoActualizado.Estado))
             {
                 if (!estadosValidos.Contains(juegoActualizado.Estado))
                     throw new ArgumentException("Estado inválido");
-
                 updates["Estado"] = juegoActualizado.Estado;
             }
 
@@ -142,9 +147,9 @@ namespace ExamenII_Web.api.Services
             return juego;
         }
 
-
-        // DELETE: Eliminar juego
-
+        // ================================
+        // Eliminar juego
+        // ================================
         public async Task EliminarJuego(string id)
         {
             var docRef = _firestoreDb.Collection(Coleccion).Document(id);
@@ -164,8 +169,9 @@ namespace ExamenII_Web.api.Services
             await docRef.DeleteAsync();
         }
 
-
-        // GET: Estadísticas
+        // ================================
+        // Obtener estadísticas por ID
+        // ================================
         public async Task<Juego> ObtenerEstadisticas(string id)
         {
             var juego = await ObtenerJuegoPorId(id);
@@ -176,8 +182,9 @@ namespace ExamenII_Web.api.Services
             return juego;
         }
 
-
-        // GET: Obtener por ID
+        // ================================
+        // Obtener juego por ID
+        // ================================
         public async Task<Juego> ObtenerJuegoPorId(string id)
         {
             var docRef = _firestoreDb.Collection(Coleccion).Document(id);

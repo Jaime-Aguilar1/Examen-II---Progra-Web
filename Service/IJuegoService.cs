@@ -12,5 +12,7 @@ namespace ExamenII_Web.api.Services
         Task<Juego> ObtenerEstadisticas(string id);
         Task<Juego> ObtenerJuegoPorId(string id);
         Task EliminarJuego(string id);
+        Task<List<Juego>> ObtenerTodosJuegos();
+        
     }
 }
