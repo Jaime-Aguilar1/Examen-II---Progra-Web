@@ -141,6 +141,7 @@ public class Escenario1Controller: ControllerBase
        }
        
        [HttpPut("jugadores/{id}/perfil")]
+       [Authorize]
        public async Task<IActionResult> UpdatePerfil(string id, [FromBody] ActualizarPerfilDto dto)
        {
            
