@@ -231,7 +231,7 @@ public class AuthService : IAuthService
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim("sub", user.Id),
+                new Claim("jugadorId", user.Id),
                 new Claim("email", user.Email),
                 new Claim("name", fullName),
                 new Claim("role", user.Role)
