@@ -159,3 +159,138 @@ DELETE	/torneos/{id}/participantes/{idParticipacion}/abandonar	Abandonar torneo 
 7. Reglas de Negocio y Validaciones - Inscripción solo en torneos en estado “próximo” y con cupos disponibles. - El jugador debe estar activo, cumplir el rango de nivel y confirmar pago si aplica. - No se permite inscripción múltiple para el mismo torneo. - Actualización de resultados solo por organizador o admin. - En torneos de eliminación directa, perder una partida cambia estado a “eliminado”. - Solo se puede abandonar torneo si está en estado “inscrito” y el torneo no ha iniciado.
 8. Ejecución de Pruebas (Swagger) 1. Autenticarse y obtener token JWT. 2. Pegar token en la opción “Authorize” de Swagger con esquema Bearer. 3. Ejecutar endpoints según documentación. 4. Verificar respuestas, incluyendo errores HTTP 400, 403, 404 y 500 según validaciones.
 Fin del Documento
+
+
+
+
+
+Escenario 5
+Descripción
+Este módulo implementa endpoints avanzados para consultas complejas, generación de reportes analíticos y sistemas de clasificación de jugadores dentro de la plataforma.
+Incluye rankings globales, reportes personalizados, estadísticas de torneos y análisis de tendencias.
+Tecnologías sugeridas
+Backend: Node.js / Spring Boot / .NET 
+Base de datos: PostgreSQL / MySQL 
+Autenticación: JWT 
+ORM: Sequelize / Hibernate / Entity Framework
+
+ Endpoints
+1.  Clasificación global por juego
+GET /api/clasificaciones/{juegoId}
+Retorna el ranking global de jugadores para un juego específico.
+
+ Parámetros:
+juegoId (path): ID del juego
+page (query): número de página (default: 1)
+limit (query): máximo 50 registros por página
+nivelMin (query): filtro opcional
+nivelMax (query): filtro opcional
+
+ Respuesta:
+{
+  "pagina": 1,
+  "total": 200,
+  "data": [
+    {
+      "posicion": 1,
+      "nombre": "JugadorPro",
+      "puntos": 5000,
+      "nivel": 45,
+      "ratioVictoria": 0.78,
+      "totalPartidas": 300,
+      "rachaActual": 10
+    }
+  ]
+}
+
+2.  Clasificación del jugador autenticado
+
+GET /api/jugador/clasificacion/{juegoId}
+Retorna la posición del jugador autenticado en un juego específico.
+
+ Acceso:
+Solo usuario autenticado
+ Respuesta:
+{
+  "posicion": 15,
+  "puntos": 3200,
+  "nivel": 30,
+  "medallas": 5,
+  "logrosDesbloqueados": 12
+}
+
+3.  Torneos populares
+
+GET /api/reportes/torneos-populares
+Retorna los 10 torneos con más inscripciones en los últimos 30 días.
+
+Acceso:
+Organizadores
+Administradores
+Respuesta:
+[
+  {
+    "nombre": "Torneo Pro 2026",
+    "juego": "Valorant",
+    "inscripciones": 150,
+    "premioTotal": 2000,
+    "estado": "Activo"
+  }
+]
+4.  Jugadores destacados
+
+GET /api/reportes/jugadores-destacados
+Retorna los 20 jugadores con mayor puntaje global.
+
+ Acceso:
+Usuarios autenticados
+Respuesta:
+[
+  {
+    "nombre": "TopPlayer",
+    "puntosGlobales": 10000,
+    "torneosGanados": 25,
+    "juegosParticipados": 8
+  }
+]
+5.  Mi desempeño
+
+GET /api/reportes/mi-desempeno/{juegoId}
+Genera un reporte completo del rendimiento del jugador autenticado.
+
+ Acceso:
+Solo usuario autenticado
+ Respuesta:
+{
+  "nivelActual": 25,
+  "posicionRanking": 40,
+  "progresoSiguienteNivel": "70%",
+  "ratioVictoria": 0.65,
+  "rachaActual": 4,
+  "medallas": 3,
+  "mejoresTorneos": [
+    {
+      "nombre": "Copa Elite",
+      "puntuacion": 500
+    }
+  ]
+}
+6.  Tendencias del sistema
+
+GET /api/reportes/tendencias
+Retorna métricas analíticas clave del sistema.
+
+Acceso:
+Solo administradores
+ Respuesta:
+{
+  "juegosPopulares": ["Valorant", "FIFA", "Fortnite"],
+  "generosActivos": ["FPS", "Deportes"],
+  "horaPico": "20:00 - 22:00"
+}
+
+Reglas de negocio
+Paginación obligatoria en clasificaciones (máx. 50 por página)
+Control de acceso basado en roles (Jugador, Organizador, Administrador)
+ Reportes de torneos basados en últimos 30 días
+Ranking ordenado por posición (1 = mejor jugador)
