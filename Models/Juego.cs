@@ -1,7 +1,8 @@
 using Google.Cloud.Firestore;
 using System;
 using System.Collections.Generic;
-namespace Proyecto_Grupo4.API.Models
+namespace ExamenII_Web.api.Models
+
 {
     [FirestoreData] 
     public class Juego
