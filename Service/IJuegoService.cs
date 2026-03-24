@@ -2,7 +2,7 @@ using ExamenII_Web.api.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ExamenII_Web.api.Services
+namespace ExamenII_Web.api.Service
 {
     public interface IJuegoService
     {

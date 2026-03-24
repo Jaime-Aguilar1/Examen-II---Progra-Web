@@ -1,5 +1,6 @@
 using System.Text;
 using ExamenII_Web.api.Service;
+using ExamenII_Web.api.Services;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -33,9 +34,9 @@ builder.Services.AddSingleton<FirestoreDb>(sp =>
 // ============================================
 builder.Services.AddSingleton<FirebaseService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-//builder.Services.AddScoped<IRoomService, RoomService>();
-//builder.Services.AddScoped<IReservationService, ReservationService>();
-//builder.Services.AddScoped<ITorneoService, TorneoService>();
+builder.Services.AddScoped<IJuegoService, JuegoService>();
+builder.Services.AddScoped<ITorneoService, TorneoService>();
+builder.Services.AddScoped<IParticipacionService, ParticipacionService>();
 // ============================================
 // CONFIGURAR CORS (Conexión con el Frontend)
 // ============================================
